@@ -1,0 +1,31 @@
+RewriteEngine On
+DirectoryIndex index.html
+
+# 1. Redirecionar index.html para a raiz (/)
+RewriteCond %{THE_REQUEST} /index\.html [NC]
+RewriteRule ^(.*)index\.html$ /$1 [R=301,L]
+
+# 2. Remover a extensão .html das URLs (navegação limpa)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# 3. Forçar HTTPS (Opcional - remova o comentário abaixo se tiver SSL)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 4. Impedir listagem de diretórios (segurança)
+Options -Indexes
+
+# 5. Proteger o próprio .htaccess e arquivos de dados
+<FilesMatch "(\.htaccess|\.db|\.json|\.sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 6. Proteção básica contra XSS e Sniffing
+<IfModule mod_headers.c>
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
