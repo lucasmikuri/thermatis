@@ -1,5 +1,5 @@
 'use strict';
-const { json, readBody } = require('./_lib/http');
+const { json } = require('./_lib/http');
 const { listRows, replaceRows, insertRow } = require('./_lib/supabase');
 const { requireAuth } = require('./_lib/auth');
 
@@ -17,6 +17,31 @@ function normalizeOrcamento(input = {}) {
   };
 }
 
+async function parseRequestBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+
+  return await new Promise((resolve, reject) => {
+    let raw = '';
+
+    req.on('data', chunk => {
+      raw += chunk;
+    });
+
+    req.on('end', () => {
+      if (!raw) return resolve({});
+      try {
+        resolve(JSON.parse(raw));
+      } catch (err) {
+        reject(new Error('JSON inválido no corpo da requisição.'));
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
@@ -26,8 +51,13 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const body = await readBody(req);
+      const body = await parseRequestBody(req);
       const payload = normalizeOrcamento(body?.data || body || {});
+
+      if (!payload.nome) {
+        return json(res, 400, { error: 'Campo obrigatório ausente: nome.' });
+      }
+
       const row = await insertRow('orcamentos', payload);
       return json(res, 201, { ok: true, data: row });
     }
@@ -36,7 +66,7 @@ module.exports = async (req, res) => {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
 
-      const body = await readBody(req);
+      const body = await parseRequestBody(req);
       const items = Array.isArray(body?.items)
         ? body.items.map(normalizeOrcamento)
         : [];
