@@ -1316,14 +1316,14 @@ tbody td {
   .config-grid    { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .sidebar { width: 0; overflow: hidden; }
   .sidebar.mobile-open { width: var(--sidebar-w); }
   .main-content { margin-left: 0 !important; }
   .page-content { padding: 16px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .topbar { padding: 0 16px; }
-}
+} */
 
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
