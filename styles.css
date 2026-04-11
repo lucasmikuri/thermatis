@@ -1221,28 +1221,120 @@ footer {
   .footer-grid   { grid-template-columns: 1fr 1fr; gap: 40px; }
 }
 
+/* ========================================
+   FIX MOBILE REAL — THERMATIS
+   ======================================== */
+
 @media (max-width: 768px) {
-  :root { --header-h: 70px; }
 
-  .nav-links  { display: none; }
-  .nav-phone  { display: none; }
-  .hamburger  { display: flex; }
+  /* 🔥 trava qualquer vazamento lateral */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
 
-  .hero-title { font-size: clamp(2.2rem, 8vw, 3.2rem); }
+  /* 🔥 container correto */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 
-  .hero-stats { gap: 24px; }
+  /* ================= HERO ================= */
 
-  .about-badge-float { right: 16px; }
+  .hero-content {
+    max-width: 100%;
+    width: 100%;
+    padding-top: 40px;
+  }
 
-  .form-row   { grid-template-columns: 1fr; }
+  .hero-title {
+    font-size: 2.2rem;
+    line-height: 1.1;
+    word-break: break-word;
+  }
 
-  .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+  .hero-desc {
+    font-size: 1rem;
+    max-width: 100%;
+  }
 
-  .footer-bottom { flex-direction: column; text-align: center; }
+  /* 🔥 BOTÕES EM COLUNA */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
 
-  .trust-inner { gap: 20px; }
+  .hero-actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
 
-  .contact-form-wrap { padding: 32px 24px; }
+  /* 🔥 STATS EMPILHADO */
+  .hero-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ================= NAVBAR ================= */
+
+  #navbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* ================= TRUST ================= */
+
+  .trust-inner {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  /* ================= CTA ================= */
+
+  .cta-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cta-actions .btn {
+    width: 100%;
+  }
+
+  /* ================= FORM ================= */
+
+  .contact-form-wrap {
+    padding: 24px 16px;
+  }
+
+  /* 🔥 evita estouro da badge sobre imagem */
+  .about-badge-float {
+    right: 10px;
+    left: 10px;
+  }
+}
+
+/* EXTRA SMALL (celular pequeno) */
+@media (max-width: 480px) {
+
+  .hero-title {
+    font-size: 1.9rem;
+  }
+
+  .section-title {
+    font-size: 1.7rem;
+  }
+
+  .btn {
+    padding: 12px 18px;
+    font-size: 0.9rem;
+  }
+
+  .hero-actions {
+    gap: 10px;
+  }
 }
 
 @media (max-width: 480px) {
