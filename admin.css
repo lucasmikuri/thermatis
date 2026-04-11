@@ -1316,12 +1316,12 @@ tbody td {
   .config-grid    { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .sidebar { width: 0; overflow: hidden; }
   /* .sidebar.mobile-open { width: var(--sidebar-w); } */
   .sidebar {
   left: -280px;
-}
+} */
 /* .sidebar.open {
   left: 0;
 } */
