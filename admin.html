@@ -379,7 +379,19 @@
       </section>
 
       <!-- ══════════ GESTÃO DO SITE (Injetado via JS) ══════════ -->
-      <section class="page" id="page-global-settings" aria-label="Gestão do sistema unificada"></section>
+      <section class="page" id="page-global-settings" aria-label="Gestão do sistema unificada">
+  <div class="card" style="margin:24px;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Gestão do Site</div>
+        <div class="card-subtitle">Carregando painel...</div>
+      </div>
+    </div>
+    <div id="global-settings-fallback" style="padding:20px;color:var(--text-2);font-size:.95rem;">
+      Se esta tela continuar vazia, o JavaScript do painel não inicializou corretamente.
+    </div>
+  </div>
+</section>
 
     </main><!-- /page-content -->
   </div><!-- /main-content -->
@@ -594,8 +606,8 @@
 </div>
 
 <script src="persistence.js"></script>
+<script src="admin-db.js"></script>
 <script src="admin-cms.js"></script>
 <script src="admin.js"></script>
-<script src="admin-db.js"></script>
 </body>
 </html>
