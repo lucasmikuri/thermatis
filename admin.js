@@ -184,7 +184,7 @@ function navigateTo(pageId) {
 /* ─────────────────────────────────────────────────────────────────────
    SIDEBAR
    ───────────────────────────────────────────────────────────────────── */
-function setupSidebar() {
+/* function setupSidebar() {
   const toggle  = document.getElementById('sidebarToggle');
   const sidebar = document.getElementById('sidebar');
 
@@ -194,6 +194,51 @@ function setupSidebar() {
       sidebar.classList.remove('collapsed');
     } else {
       sidebar.classList.toggle('collapsed');
+    }
+  });
+} */
+
+  /* ─────────────────────────────────────────────────────────────────────
+   SIDEBAR (FIX MOBILE + DESKTOP)
+   ───────────────────────────────────────────────────────────────────── */
+function setupSidebar() {
+  const toggle  = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+
+  if (!toggle || !sidebar) return;
+
+  const isMobile = () => window.innerWidth <= 768;
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    if (isMobile()) {
+      const opened = sidebar.classList.toggle('mobile-open');
+      document.body.classList.toggle('sidebar-open', opened);
+      sidebar.classList.remove('collapsed');
+    } else {
+      sidebar.classList.toggle('collapsed');
+    }
+  });
+
+  // 🔥 FECHAR AO CLICAR FORA
+  document.addEventListener('click', (e) => {
+    if (!isMobile()) return;
+
+    const clicouDentro = sidebar.contains(e.target);
+    const clicouBotao  = toggle.contains(e.target);
+
+    if (!clicouDentro && !clicouBotao) {
+      sidebar.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
+    }
+  });
+
+  // 🔥 RESET AO REDIMENSIONAR
+  window.addEventListener('resize', () => {
+    if (!isMobile()) {
+      sidebar.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
     }
   });
 }
