@@ -257,19 +257,30 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   gap: 5px;
   padding: 4px;
   cursor: pointer;
+  z-index: 1001;
 }
 
 .hamburger span {
   display: block;
-  width: 26px; height: 2px;
+  width: 26px;
+  height: 2px;
   background: #fff;
   border-radius: 2px;
-  transition: all var(--transition-base);
+  transition: all 0.3s ease;
 }
 
-.hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger.active span:nth-child(2) { opacity: 0; }
-.hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+/* ANIMAÇÃO CORRETA */
+.hamburger.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
 
 /* Mobile menu */
 .mobile-menu {
