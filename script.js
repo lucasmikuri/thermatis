@@ -42,7 +42,7 @@ const DEFAULT_CONTENT = {
       cta: { titulo: 'Seu Ar Limpo e Gelando de Verdade!', descricao: 'Solicite um orçamento gratuito agora mesmo pelo WhatsApp.' }
     },
     servicos: [
-      { icon: '❄️', titulo: 'Instalação', cor: 'blue', descricao: 'Instalação profissional de splits e multi-splits.' },
+      { icon: '❄️', titulo: 'Instalação', cor: 'blue', descricao: 'Instalação profissional de splits e multi-splits residencial e predial.' },
       { icon: '🧼', titulo: 'Limpeza', cor: 'emerald', descricao: 'Limpeza profunda com produtos bactericidas.' }
     ],
     sobre: { 
