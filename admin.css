@@ -1318,13 +1318,13 @@ tbody td {
 
 /* @media (max-width: 768px) {
   .sidebar { width: 0; overflow: hidden; }
-  /* .sidebar.mobile-open { width: var(--sidebar-w); } */
+  .sidebar.mobile-open { width: var(--sidebar-w); } 
   .sidebar {
   left: -280px;
 } */
-/* .sidebar.open {
+ .sidebar.open {
   left: 0;
-} */
+} 
 
 .sidebar.mobile-open {
   left: 0;
