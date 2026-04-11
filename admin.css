@@ -1316,19 +1316,9 @@ tbody td {
   .config-grid    { grid-template-columns: 1fr; }
 }
 
-/* @media (max-width: 768px) {
+@media (max-width: 768px) {
   .sidebar { width: 0; overflow: hidden; }
-  .sidebar.mobile-open { width: var(--sidebar-w); } 
-  .sidebar {
-  left: -280px;
-} */
- .sidebar.open {
-  left: 0;
-} 
-
-.sidebar.mobile-open {
-  left: 0;
-}
+  .sidebar.mobile-open { width: var(--sidebar-w); }
   .main-content { margin-left: 0 !important; }
   .page-content { padding: 16px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -1527,40 +1517,4 @@ tbody td {
 .config-group textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
-}
-
-/* =========================
-   ADMIN MOBILE FIX
-   ========================= */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 280px;
-    height: 100vh;
-    z-index: 1200;
-    transition: left 0.3s ease;
-  }
-
-  .sidebar.mobile-open {
-    left: 0;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
-    width: 100%;
-  }
-
-  .page-content {
-    padding: 16px;
-  }
-
-  .kpi-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .topbar {
-    padding: 0 16px;
-  }
 }
