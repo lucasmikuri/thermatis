@@ -4,27 +4,11 @@ const { json, readBody } = require('./_lib/http');
 const { listRows, replaceRows, insertRow } = require('./_lib/supabase');
 const { requireAuth } = require('./_lib/auth');
 
-function normalizeOrcamento(input = {}) {
-  return {
-    id: input.id || `orc-${Date.now()}`,
-    nome: input.nome ?? null,
-    telefone: input.telefone ?? null,
-    email: input.email ?? null,
-    servico: input.servico ?? null,
-    mensagem: input.mensagem ?? null,
-    status: input.status || 'novo',
-    data: input.data || new Date().toISOString(),
-    origem: input.origem || 'site'
-  };
-}
-
 async function getBody(req) {
-  // Caso a Vercel já tenha parseado
   if (req.body && typeof req.body === 'object') {
     return req.body;
   }
 
-  // Caso venha como string
   if (req.body && typeof req.body === 'string') {
     try {
       return JSON.parse(req.body);
@@ -33,7 +17,6 @@ async function getBody(req) {
     }
   }
 
-  // Fallback manual
   try {
     const raw = await readBody(req);
     if (!raw) return {};
@@ -44,12 +27,27 @@ async function getBody(req) {
   }
 }
 
+function toText(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
+function buildOrcamento(input = {}) {
+  return {
+    id: toText(input.id) || `orc-${Date.now()}`,
+    nome: toText(input.nome),
+    telefone: toText(input.telefone),
+    email: toText(input.email),
+    servico: toText(input.servico),
+    mensagem: toText(input.mensagem),
+    status: toText(input.status) || 'novo',
+    data: toText(input.data) || new Date().toISOString(),
+    origem: toText(input.origem) || 'site'
+  };
+}
+
 module.exports = async (req, res) => {
   try {
-
-    // ========================
-    // GET
-    // ========================
     if (req.method === 'GET') {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
@@ -58,20 +56,19 @@ module.exports = async (req, res) => {
       return json(res, 200, { ok: true, data });
     }
 
-    // ========================
-    // POST
-    // ========================
     if (req.method === 'POST') {
-
       const body = await getBody(req);
-      console.log('BODY RECEBIDO:', body);
+      const source = body && typeof body === 'object' && body.data && typeof body.data === 'object'
+        ? body.data
+        : body;
 
-      const payload = normalizeOrcamento(body?.data || body || {});
+      const payload = buildOrcamento(source);
 
-      if (!payload.nome) {
+      if (payload.nome === '') {
         return json(res, 400, {
           error: 'Campo obrigatório ausente: nome.',
-          debug: body
+          debugBody: body,
+          debugPayload: payload
         });
       }
 
@@ -83,26 +80,20 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ========================
-    // PUT
-    // ========================
     if (req.method === 'PUT') {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
 
       const body = await getBody(req);
-
       const items = Array.isArray(body?.items)
-        ? body.items.map(normalizeOrcamento)
+        ? body.items.map(buildOrcamento)
         : [];
 
       const data = await replaceRows('orcamentos', items);
-
       return json(res, 200, { ok: true, data });
     }
 
     return json(res, 405, { error: 'Método não permitido.' });
-
   } catch (error) {
     console.error('ERRO API ORCAMENTOS:', error);
     return json(res, 500, {
