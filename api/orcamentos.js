@@ -1,5 +1,6 @@
 'use strict';
-const { json } = require('./_lib/http');
+
+const { json, readBody } = require('./_lib/http');
 const { listRows, replaceRows, insertRow } = require('./_lib/supabase');
 const { requireAuth } = require('./_lib/auth');
 
@@ -17,68 +18,95 @@ function normalizeOrcamento(input = {}) {
   };
 }
 
-async function parseRequestBody(req) {
+async function getBody(req) {
+  // Caso a Vercel já tenha parseado
   if (req.body && typeof req.body === 'object') {
     return req.body;
   }
 
-  return await new Promise((resolve, reject) => {
-    let raw = '';
+  // Caso venha como string
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
+  }
 
-    req.on('data', chunk => {
-      raw += chunk;
-    });
-
-    req.on('end', () => {
-      if (!raw) return resolve({});
-      try {
-        resolve(JSON.parse(raw));
-      } catch (err) {
-        reject(new Error('JSON inválido no corpo da requisição.'));
-      }
-    });
-
-    req.on('error', reject);
-  });
+  // Fallback manual
+  try {
+    const raw = await readBody(req);
+    if (!raw) return {};
+    if (typeof raw === 'string') return JSON.parse(raw);
+    return raw;
+  } catch {
+    return {};
+  }
 }
 
 module.exports = async (req, res) => {
   try {
+
+    // ========================
+    // GET
+    // ========================
     if (req.method === 'GET') {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
-      return json(res, 200, { ok: true, data: await listRows('orcamentos') });
+
+      const data = await listRows('orcamentos');
+      return json(res, 200, { ok: true, data });
     }
 
+    // ========================
+    // POST
+    // ========================
     if (req.method === 'POST') {
-      const body = await parseRequestBody(req);
+
+      const body = await getBody(req);
+      console.log('BODY RECEBIDO:', body);
+
       const payload = normalizeOrcamento(body?.data || body || {});
 
       if (!payload.nome) {
-        return json(res, 400, { error: 'Campo obrigatório ausente: nome.' });
+        return json(res, 400, {
+          error: 'Campo obrigatório ausente: nome.',
+          debug: body
+        });
       }
 
       const row = await insertRow('orcamentos', payload);
-      return json(res, 201, { ok: true, data: row });
+
+      return json(res, 201, {
+        ok: true,
+        data: row
+      });
     }
 
+    // ========================
+    // PUT
+    // ========================
     if (req.method === 'PUT') {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
 
-      const body = await parseRequestBody(req);
+      const body = await getBody(req);
+
       const items = Array.isArray(body?.items)
         ? body.items.map(normalizeOrcamento)
         : [];
 
-      return json(res, 200, {
-        ok: true,
-        data: await replaceRows('orcamentos', items)
-      });
+      const data = await replaceRows('orcamentos', items);
+
+      return json(res, 200, { ok: true, data });
     }
 
     return json(res, 405, { error: 'Método não permitido.' });
+
   } catch (error) {
-    return json(res, 500, { error: error.message || 'Erro interno.' });
+    console.error('ERRO API ORCAMENTOS:', error);
+    return json(res, 500, {
+      error: error.message || 'Erro interno.'
+    });
   }
 };
