@@ -1198,6 +1198,21 @@ window.addEventListener('storage', (e) => {
   }
 });
 
+/* Notificação em tempo real vinda do site público (mesma origem) */
+if (typeof BroadcastChannel !== 'undefined') {
+  try {
+    const adminChannel = new BroadcastChannel('thermatis_admin_update');
+    adminChannel.addEventListener('message', (e) => {
+      if (e.data === 'new_comment') {
+        loadComentariosRemote().then(() => {
+          updateBadgeComentarios();
+          window._renderComentariosAdmin?.();
+        });
+      }
+    });
+  } catch {}
+}
+
 /* ─────────────────────────────────────────────────────────────────────
    COMENTÁRIOS
    ───────────────────────────────────────────────────────────────────── */

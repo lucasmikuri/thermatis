@@ -707,7 +707,12 @@ function escHtmlPublic(str = '') {
 
       form.reset();
       form.style.display = 'none';
-      success.style.display = '';
+      success.style.display = 'block';
+
+      /* Notifica o painel admin (mesma aba/browser) */
+      if (typeof BroadcastChannel !== 'undefined') {
+        try { new BroadcastChannel('thermatis_admin_update').postMessage('new_comment'); } catch {}
+      }
     } catch {
       btnText.textContent = '💬 Enviar Comentário';
       form.querySelector('button[type="submit"]').disabled = false;
