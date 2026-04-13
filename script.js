@@ -600,6 +600,7 @@ function initTracking(content) {
 /* ─── Atualização em tempo real vinda do painel admin ──────────────── */
 window.addEventListener('storage', (e) => {
   if (e.key === STORE_KEY) applySiteContent();
+  if (e.key === 'climamax_comentarios') renderComentarios();
 });
 
 /* Canal de broadcast para abas na mesma origem (complementa o storage) */
@@ -607,5 +608,115 @@ if (typeof BroadcastChannel !== 'undefined') {
   const siteChannel = new BroadcastChannel('thermatis_site_update');
   siteChannel.addEventListener('message', (e) => {
     if (e.data === 'refresh') applySiteContent();
+    if (e.data === 'comentarios_update') renderComentarios();
   });
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   COMENTÁRIOS — Exibição e envio
+   ───────────────────────────────────────────────────────────────────── */
+async function renderComentarios() {
+  const container = document.getElementById('comentarios-lista');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/comentarios');
+    const json = await res.json();
+    const lista = Array.isArray(json?.data) ? json.data : [];
+
+    if (!lista.length) {
+      container.innerHTML = `
+        <div class="comentarios-empty">
+          <p>Seja o primeiro a deixar um comentário!</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = lista.map(c => {
+      const iniciais = (c.nome || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+      const data = c.created_at
+        ? new Date(c.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+        : '';
+      return `
+        <div class="comentario-card reveal">
+          <div class="comentario-avatar">${iniciais}</div>
+          <div class="comentario-body">
+            <div class="comentario-header">
+              <strong class="comentario-nome">${escHtmlPublic(c.nome)}</strong>
+              ${data ? `<span class="comentario-data">${data}</span>` : ''}
+            </div>
+            <p class="comentario-texto">${escHtmlPublic(c.mensagem)}</p>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Re-aplica observer de reveal para os novos cards
+    container.querySelectorAll('.reveal').forEach(el => {
+      if (typeof revealObserver !== 'undefined') revealObserver.observe(el);
+    });
+  } catch {
+    container.innerHTML = '';
+  }
+}
+
+function escHtmlPublic(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+(function setupComentarioForm() {
+  const form    = document.getElementById('comentarioForm');
+  const success = document.getElementById('comentarioSuccess');
+  const btnText = document.getElementById('com-btn-text');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const nome     = document.getElementById('com-nome').value.trim();
+    const email    = document.getElementById('com-email').value.trim();
+    const mensagem = document.getElementById('com-mensagem').value.trim();
+
+    if (!nome) {
+      document.getElementById('com-nome').focus();
+      return;
+    }
+    if (!mensagem) {
+      document.getElementById('com-mensagem').focus();
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('com-email').focus();
+      return;
+    }
+
+    btnText.textContent = '⏳ Enviando...';
+    form.querySelector('button[type="submit"]').disabled = true;
+
+    try {
+      const res = await fetch('/api/comentarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, mensagem }),
+      });
+
+      if (!res.ok) throw new Error('Erro ao enviar');
+
+      form.reset();
+      form.style.display = 'none';
+      success.style.display = '';
+    } catch {
+      btnText.textContent = '💬 Enviar Comentário';
+      form.querySelector('button[type="submit"]').disabled = false;
+      alert('Não foi possível enviar o comentário. Tente novamente.');
+    }
+  });
+})();
+
+/* Carrega comentários ao iniciar */
+document.addEventListener('DOMContentLoaded', () => {
+  renderComentarios();
+});

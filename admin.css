@@ -710,6 +710,11 @@ img { display: block; max-width: 100%; }
 .badge-concluido { background:rgba(16,185,129,.15); color:var(--green);   border:1px solid rgba(16,185,129,.25); }
 .badge-cancelado { background:rgba(239,68,68,.12);  color:var(--red);     border:1px solid rgba(239,68,68,.2);  }
 
+/* Comentários */
+.badge-com-pendente  { background:rgba(245,158,11,.15); color:var(--amber);   border:1px solid rgba(245,158,11,.25); }
+.badge-com-aprovado  { background:rgba(16,185,129,.15); color:var(--green);   border:1px solid rgba(16,185,129,.25); }
+.badge-com-rejeitado { background:rgba(239,68,68,.12);  color:var(--red,#ef4444); border:1px solid rgba(239,68,68,.2); }
+
 /* ============================================================
    TABELA
    ============================================================ */

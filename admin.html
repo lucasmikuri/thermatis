@@ -102,6 +102,11 @@
         <span class="nav-icon">👥</span>
         <span>Clientes</span>
       </div>
+      <div class="nav-item" data-page="comentarios" role="button" tabindex="0" aria-label="Comentários">
+        <span class="nav-icon">💬</span>
+        <span>Comentários</span>
+        <span class="nav-badge" id="badgeComentarios" style="display:none">0</span>
+      </div>
       <div class="nav-section-label">Sistema</div>
       <div class="nav-item" data-page="global-settings" id="navGlobal" role="button" tabindex="0" aria-label="Gestão do Site">
         <span class="nav-icon">⚙️</span>
@@ -390,6 +395,57 @@
         </div>
       </section>
 
+      <!-- ══════════ COMENTÁRIOS ══════════ -->
+      <section class="page" id="page-comentarios" aria-label="Gerenciar Comentários">
+        <div class="page-header">
+          <div>
+            <h1>Comentários</h1>
+            <p>Modere os comentários enviados pelo site</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="search" id="searchComentarios" placeholder="Buscar por nome ou mensagem..." aria-label="Buscar comentários" />
+            </div>
+            <div class="filter-tabs" id="filterTabsComentarios" role="tablist">
+              <button class="filter-tab active" data-filter="todos" role="tab">Todos</button>
+              <button class="filter-tab" data-filter="pendente" role="tab">⏳ Pendentes</button>
+              <button class="filter-tab" data-filter="aprovado" role="tab">✅ Aprovados</button>
+              <button class="filter-tab" data-filter="rejeitado" role="tab">❌ Rejeitados</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table aria-label="Lista de comentários">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Mensagem</th>
+                  <th>Status</th>
+                  <th>Data</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaComentarios">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-icon">💬</div>
+                      <h3>Nenhum comentário ainda</h3>
+                      <p>Comentários enviados pelo site aparecerão aqui.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ══════════ GESTÃO DO SITE (Injetado via JS) ══════════ -->
       <section class="page" id="page-global-settings" aria-label="Gestão do sistema unificada">
   <div class="card" style="margin:24px;">
@@ -420,6 +476,25 @@
 <!-- =====================================================================
      MODAIS
      ===================================================================== -->
+
+<!-- Modal: Detalhes do Comentário -->
+<div class="modal-overlay" id="modalComentario" role="dialog" aria-modal="true" aria-labelledby="modalComentarioTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalComentarioTitle">Detalhes do Comentário</div>
+        <div class="modal-subtitle" id="modalComentarioId">#—</div>
+      </div>
+      <button class="modal-close" data-modal="modalComentario" aria-label="Fechar">✕</button>
+    </div>
+    <div id="modalComentarioBody"></div>
+    <div class="modal-footer" id="modalComentarioFooter">
+      <button class="btn-cancel" data-modal="modalComentario">Fechar</button>
+      <button class="btn-save" id="btnAprovarComentario" style="background:var(--green)">✅ Aprovar</button>
+      <button class="btn-save" id="btnRejeitarComentario" style="background:var(--red,#ef4444)">❌ Rejeitar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: Detalhes / Editar Orçamento -->
 <div class="modal-overlay" id="modalOrcamento" role="dialog" aria-modal="true" aria-labelledby="modalOrcamentoTitle">

@@ -99,6 +99,7 @@ async function showApp() {
   setupOrcamentos();
   setupClientes();
   setupAgenda();
+  setupComentarios();
   setupDashboard();
   updateBadge();
   setupNotifications();
@@ -190,6 +191,7 @@ function navigateTo(pageId) {
     orcamentos: 'Orçamentos',
     agenda: 'Agenda',
     clientes: 'Clientes',
+    comentarios: 'Comentários',
     'global-settings': 'Gestão do Site',
   };
   const bc = document.getElementById('breadcrumbLabel');
@@ -1189,4 +1191,196 @@ window.addEventListener('storage', (e) => {
     setupDashboard();
     window._renderOrcamentos?.();
   }
+  if (e.key === 'climamax_comentarios') {
+    updateBadgeComentarios();
+    window._renderComentariosAdmin?.();
+  }
 });
+
+/* ─────────────────────────────────────────────────────────────────────
+   COMENTÁRIOS
+   ───────────────────────────────────────────────────────────────────── */
+function comentarioStatusLabel(s) {
+  const map = { pendente: '⏳ Pendente', aprovado: '✅ Aprovado', rejeitado: '❌ Rejeitado' };
+  return map[s] || s;
+}
+
+function updateBadgeComentarios() {
+  const pendentes = DB.get('comentarios', []).filter(c => c.status === 'pendente').length;
+  const badge = document.getElementById('badgeComentarios');
+  if (!badge) return;
+  if (pendentes > 0) {
+    badge.textContent = pendentes;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function setupComentarios() {
+  updateBadgeComentarios();
+
+  let activeFilter = 'todos';
+  let searchTerm   = '';
+  let currentComId = null;
+
+  const renderTable = () => {
+    let data = DB.get('comentarios', [])
+      .slice()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (activeFilter !== 'todos') data = data.filter(c => c.status === activeFilter);
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      data = data.filter(c =>
+        c.nome?.toLowerCase().includes(q) ||
+        c.mensagem?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q)
+      );
+    }
+
+    const tbody = document.getElementById('tabelaComentarios');
+    if (!tbody) return;
+
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          <h3>Nenhum comentário encontrado</h3>
+          <p>Comentários enviados pelo site aparecerão aqui.</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map((c, i) => `
+      <tr>
+        <td style="color:var(--text-2);font-size:.8rem">${i + 1}</td>
+        <td>
+          <div style="font-weight:600">${escHtml(c.nome)}</div>
+          <div style="font-size:.78rem;color:var(--text-2)">${escHtml(c.email || '')}</div>
+        </td>
+        <td style="max-width:280px">
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px" title="${escHtml(c.mensagem)}">
+            ${escHtml(c.mensagem)}
+          </div>
+        </td>
+        <td><span class="badge badge-com-${c.status}">${comentarioStatusLabel(c.status)}</span></td>
+        <td style="font-size:.82rem;color:var(--text-2)">${formatDate(c.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-action" title="Ver detalhes" onclick="openComentarioModal('${c.id}')">👁️</button>
+            ${c.status !== 'aprovado'
+              ? `<button class="btn-action" title="Aprovar" onclick="changeComentarioStatus('${c.id}','aprovado')" style="color:var(--green)">✅</button>`
+              : ''}
+            ${c.status !== 'rejeitado'
+              ? `<button class="btn-action" title="Rejeitar" onclick="changeComentarioStatus('${c.id}','rejeitado')" style="color:var(--red,#ef4444)">❌</button>`
+              : ''}
+            <button class="btn-action" title="Excluir" onclick="deleteComentario('${c.id}')" style="color:var(--red,#ef4444)">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  };
+
+  window._renderComentariosAdmin = renderTable;
+
+  // Filtros
+  document.getElementById('filterTabsComentarios')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-filter]');
+    if (!btn) return;
+    activeFilter = btn.dataset.filter;
+    document.querySelectorAll('#filterTabsComentarios .filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  });
+
+  // Busca
+  document.getElementById('searchComentarios')?.addEventListener('input', (e) => {
+    searchTerm = e.target.value.trim();
+    renderTable();
+  });
+
+  renderTable();
+}
+
+function openComentarioModal(id) {
+  const comentario = DB.get('comentarios', []).find(c => c.id === id);
+  if (!comentario) return;
+
+  document.getElementById('modalComentarioId').textContent = `#${comentario.id}`;
+  document.getElementById('modalComentarioBody').innerHTML = `
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Nome</div>
+          <div style="font-weight:600">${escHtml(comentario.nome)}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">E-mail</div>
+          <div>${escHtml(comentario.email || '—')}</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Mensagem</div>
+        <div style="background:var(--surface-2);border-radius:8px;padding:12px 16px;line-height:1.6;white-space:pre-wrap">${escHtml(comentario.mensagem)}</div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
+        <div>
+          <div style="font-size:.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Status</div>
+          <span class="badge badge-com-${comentario.status}">${comentarioStatusLabel(comentario.status)}</span>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Enviado em</div>
+          <div style="font-size:.88rem">${formatDate(comentario.created_at)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const btnAprovar  = document.getElementById('btnAprovarComentario');
+  const btnRejeitar = document.getElementById('btnRejeitarComentario');
+
+  btnAprovar.style.display  = comentario.status !== 'aprovado'  ? '' : 'none';
+  btnRejeitar.style.display = comentario.status !== 'rejeitado' ? '' : 'none';
+
+  // Remove listeners anteriores clonando
+  const newAprovar  = btnAprovar.cloneNode(true);
+  const newRejeitar = btnRejeitar.cloneNode(true);
+  btnAprovar.replaceWith(newAprovar);
+  btnRejeitar.replaceWith(newRejeitar);
+
+  newAprovar.addEventListener('click', () => {
+    changeComentarioStatus(comentario.id, 'aprovado');
+    closeModal('modalComentario');
+  });
+  newRejeitar.addEventListener('click', () => {
+    changeComentarioStatus(comentario.id, 'rejeitado');
+    closeModal('modalComentario');
+  });
+
+  openModal('modalComentario');
+}
+
+function changeComentarioStatus(id, novoStatus) {
+  const lista = DB.get('comentarios', []);
+  const idx = lista.findIndex(c => c.id === id);
+  if (idx === -1) return;
+
+  lista[idx].status = novoStatus;
+  DB.set('comentarios', lista);
+  updateBadgeComentarios();
+  window._renderComentariosAdmin?.();
+
+  const label = novoStatus === 'aprovado' ? 'aprovado' : 'rejeitado';
+  showToast(`Comentário ${label} com sucesso!`, 'success');
+}
+
+function deleteComentario(id) {
+  if (!confirm('Excluir este comentário permanentemente?')) return;
+  const lista = DB.get('comentarios', []).filter(c => c.id !== id);
+  DB.set('comentarios', lista);
+  updateBadgeComentarios();
+  window._renderComentariosAdmin?.();
+  showToast('Comentário excluído.', 'success');
+}
