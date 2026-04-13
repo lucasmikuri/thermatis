@@ -1,8 +1,28 @@
 'use strict';
 
 const { json, readBody } = require('./_lib/http');
-const { listRows, replaceRows, insertRow } = require('./_lib/supabase');
+const { replaceRows, insertRow } = require('./_lib/supabase');
 const { requireAuth } = require('./_lib/auth');
+
+/* listRows genérico ordena por 'data' que não existe em comentarios */
+async function listComentarios() {
+  const { getRequiredEnv } = require('./_lib/config');
+  const key = getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY');
+  const url = getRequiredEnv('SUPABASE_URL').replace(/\/$/, '');
+  const res = await fetch(`${url}/rest/v1/comentarios?select=*&order=created_at.asc.nullslast`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase ${res.status}: ${text}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
 
 async function getBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -40,7 +60,7 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const auth = requireAuth(req);
-      const rows = await listRows('comentarios');
+      const rows = await listComentarios();
 
       if (auth) {
         // Admin: retorna todos os comentários
@@ -80,6 +100,7 @@ module.exports = async (req, res) => {
         ? body.items.map(buildComentario)
         : [];
 
+      /* replaceRows usa DELETE + INSERT sem ordenação — ok para PUT */
       const data = await replaceRows('comentarios', items);
       return json(res, 200, { ok: true, data });
     }
