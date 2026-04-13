@@ -15,50 +15,37 @@ const DB = {
   set: (key, value) => localStorage.setItem('climamax_' + key, JSON.stringify(value)),
 };
 
-/* ─── Helpers de cookie (persistência de sessão across reloads) ─── */
-function _setCookie(name, val) {
-  document.cookie = `${name}=${encodeURIComponent(val)};path=/;SameSite=Strict`;
-}
-function _getCookie(name) {
-  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return m ? decodeURIComponent(m[1]) : null;
-}
-function _delCookie(name) {
-  document.cookie = `${name}=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-}
+/* ─── Helpers para sessionStorage REAL (antes da sobrescrita do persistence.js) ─── */
+const _ss = window._ss || {
+  set: (k, v) => { try { sessionStorage.setItem(k, v); } catch {} },
+  get: (k)    => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  del: (k)    => { try { sessionStorage.removeItem(k); } catch {} },
+};
 
 const AUTH = {
   isLogged: () => {
-    /* 1. Checa memória (in-session via persistence.js) */
-    if (sessionStorage.getItem('climamax_logged') === '1' && sessionStorage.getItem('thermatis_admin_token')) {
-      return true;
-    }
-    /* 2. Fallback: restaura de cookie caso a memória tenha sido zerada (reload) */
-    const cookieToken = _getCookie('thermatis_admin_token');
-    if (cookieToken) {
-      sessionStorage.setItem('thermatis_admin_token', cookieToken);
-      sessionStorage.setItem('climamax_logged', '1');
-      const cookieUser = _getCookie('thermatis_admin_user');
-      if (cookieUser) sessionStorage.setItem('thermatis_admin_user', cookieUser);
-      return true;
-    }
-    return false;
+    /* Lê do sessionStorage REAL — persiste em reloads (F5) */
+    return _ss.get('climamax_logged') === '1' && !!_ss.get('thermatis_admin_token');
   },
   login: (token, user = 'Administrador') => {
     if (token) {
+      _ss.set('thermatis_admin_token', token);
+      /* Também coloca na memória do persistence.js para que
+         getAdminToken() funcione durante a sessão atual */
       sessionStorage.setItem('thermatis_admin_token', token);
-      _setCookie('thermatis_admin_token', token);
     }
+    _ss.set('climamax_logged', '1');
+    _ss.set('thermatis_admin_user', user);
     sessionStorage.setItem('climamax_logged', '1');
     sessionStorage.setItem('thermatis_admin_user', user);
-    _setCookie('thermatis_admin_user', user);
   },
   logout: () => {
+    _ss.del('climamax_logged');
+    _ss.del('thermatis_admin_token');
+    _ss.del('thermatis_admin_user');
     sessionStorage.removeItem('climamax_logged');
     sessionStorage.removeItem('thermatis_admin_token');
     sessionStorage.removeItem('thermatis_admin_user');
-    _delCookie('thermatis_admin_token');
-    _delCookie('thermatis_admin_user');
     location.reload();
   },
 };
@@ -87,11 +74,17 @@ async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('active');
 
+  /* Restaura token para a memória do persistence.js (caso venha do sessionStorage real após reload) */
+  const savedToken = _ss.get('thermatis_admin_token');
+  const savedUser  = _ss.get('thermatis_admin_user');
+  if (savedToken) sessionStorage.setItem('thermatis_admin_token', savedToken);
+  if (savedUser)  sessionStorage.setItem('thermatis_admin_user', savedUser);
+
   if (window.Persistence?.initAdmin) {
     await window.Persistence.initAdmin();
   }
 
-  const userName = sessionStorage.getItem('thermatis_admin_user') || 'Administrador';
+  const userName = _ss.get('thermatis_admin_user') || sessionStorage.getItem('thermatis_admin_user') || 'Administrador';
   const userNameEl = document.getElementById('userName');
   const dashGreetEl = document.getElementById('dashGreet');
   const userAvatarEl = document.getElementById('userAvatar');

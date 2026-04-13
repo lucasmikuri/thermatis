@@ -16,7 +16,19 @@
     .admin-brand-atis  { color: #67cef5; font-weight: 900; }
   </style>
 
-<!-- Script de Resgate Removido -->
+  <!-- Salva referências NATIVAS do sessionStorage ANTES do persistence.js sobrescrevê-las -->
+  <script>
+    (function () {
+      var _sSet = Storage.prototype.setItem;
+      var _sGet = Storage.prototype.getItem;
+      var _sDel = Storage.prototype.removeItem;
+      window._ss = {
+        set: function (k, v) { _sSet.call(sessionStorage, k, v); },
+        get: function (k)    { return _sGet.call(sessionStorage, k); },
+        del: function (k)    { _sDel.call(sessionStorage, k); }
+      };
+    })();
+  </script>
 </head>
 <body>
 
