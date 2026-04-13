@@ -710,6 +710,11 @@ img { display: block; max-width: 100%; }
 .badge-concluido { background:rgba(16,185,129,.15); color:var(--green);   border:1px solid rgba(16,185,129,.25); }
 .badge-cancelado { background:rgba(239,68,68,.12);  color:var(--red);     border:1px solid rgba(239,68,68,.2);  }
 
+/* Comentários */
+.badge-com-pendente  { background:rgba(245,158,11,.15); color:var(--amber);   border:1px solid rgba(245,158,11,.25); }
+.badge-com-aprovado  { background:rgba(16,185,129,.15); color:var(--green);   border:1px solid rgba(16,185,129,.25); }
+.badge-com-rejeitado { background:rgba(239,68,68,.12);  color:var(--red,#ef4444); border:1px solid rgba(239,68,68,.2); }
+
 /* ============================================================
    TABELA
    ============================================================ */
@@ -1522,6 +1527,22 @@ tbody td {
 /* =========================
    ADMIN MOBILE FIX
    ========================= */
+
+/* Overlay + scroll lock quando sidebar está aberta */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+body.sidebar-open::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1100;
+  backdrop-filter: blur(2px);
+  animation: fadeIn .25s ease;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -1531,6 +1552,7 @@ tbody td {
     height: 100vh;
     z-index: 1200;
     transition: left 0.3s ease;
+    overflow-y: auto;
   }
 
   .sidebar.mobile-open {
@@ -1553,4 +1575,67 @@ tbody td {
   .topbar {
     padding: 0 16px;
   }
+
+  /* Esconde texto do botão Sair, mantém só o ícone */
+  .btn-logout {
+    padding: 8px 10px;
+    font-size: 0;        /* esconde texto */
+    gap: 0;
+  }
+  .btn-logout::before {
+    content: '🚪';
+    font-size: 1rem;
+  }
+
+  /* Notif dropdown não ultrapassa a tela */
+  .notif-dropdown {
+    width: min(320px, calc(100vw - 32px));
+    right: 0;
+  }
+
+  /* Page header empilha em mobile */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-header > div:last-child {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Modal com menos padding */
+  .modal {
+    padding: 24px 20px;
+  }
+
+  /* Dashboard grid já vai para 1fr via breakpoint 1100px,
+     mas garantimos aqui também */
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .calendar-wrap  { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .filter-tabs { display: none; }
+
+  /* Login card com menos padding horizontal */
+  .login-card { padding: 36px 24px; }
+
+  /* Topbar fica mais compacta */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-right { gap: 8px; }
+  .topbar-breadcrumb { font-size: .78rem; }
+
+  .page-content { padding: 12px; }
+
+  /* Modal menor */
+  .modal { padding: 20px 16px; border-radius: var(--radius-lg); }
+}
+
+/* Telas muito pequenas */
+@media (max-width: 374px) {
+  .kpi-value { font-size: 1.6rem; }
+  .page-header h1 { font-size: 1.3rem; }
+  .btn-primary-admin { font-size: .78rem; padding: 8px 12px; }
 }

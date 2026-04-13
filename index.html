@@ -238,6 +238,51 @@
     </div>
   </section>
 
+  <!-- COMENTÁRIOS -->
+  <section id="comentarios" aria-labelledby="comentarios-title">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-badge">💬 Comentários</div>
+        <h2 class="section-title" id="comentarios-title">O que nossos<br /><span class="highlight">Clientes Dizem</span></h2>
+        <p class="section-subtitle">Leia os comentários de quem já utilizou nossos serviços e deixe o seu também.</p>
+      </div>
+
+      <!-- Lista de comentários aprovados -->
+      <div id="comentarios-lista" class="comentarios-lista reveal">
+        <!-- Preenchido via script.js -->
+      </div>
+
+      <!-- Formulário de envio -->
+      <div class="comentario-form-wrap reveal">
+        <h3>Deixe seu Comentário</h3>
+        <form id="comentarioForm" novalidate aria-label="Formulário de comentário">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="com-nome">Seu Nome *</label>
+              <input type="text" id="com-nome" name="nome" placeholder="João Silva" required autocomplete="name" />
+            </div>
+            <div class="form-group">
+              <label for="com-email">E-mail (não será exibido)</label>
+              <input type="email" id="com-email" name="email" placeholder="joao@email.com" autocomplete="email" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="com-mensagem">Comentário *</label>
+            <textarea id="com-mensagem" name="mensagem" placeholder="Conte sua experiência com a THERMATIS..." rows="4" required></textarea>
+          </div>
+          <button type="submit" class="form-submit" id="com-submit-btn">
+            <span id="com-btn-text">💬 Enviar Comentário</span>
+          </button>
+        </form>
+        <div class="form-success" id="comentarioSuccess" aria-live="polite" style="display:none">
+          <div class="success-icon">✅</div>
+          <h4>Comentário Enviado!</h4>
+          <p>Obrigado pelo seu comentário. Ele será exibido após revisão da nossa equipe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CONTATO -->
   <section id="contato" aria-labelledby="contato-title">
     <div class="container">
