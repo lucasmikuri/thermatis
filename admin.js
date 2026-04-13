@@ -1234,9 +1234,12 @@ function updateBadgeComentarios() {
 }
 
 async function loadComentariosRemote() {
+  /* Usa _ss.get (sessionStorage nativo real) — o Map do persistence.js
+     pode estar vazio se chamado antes de initAdmin() terminar */
+  const token = _ss.get('thermatis_admin_token') || sessionStorage.getItem('thermatis_admin_token') || '';
   try {
     const res = await fetch('/api/comentarios', {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('thermatis_admin_token') || ''}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     const json = await res.json();
     if (Array.isArray(json?.data)) {
@@ -1317,6 +1320,11 @@ function setupComentarios() {
   };
 
   window._renderComentariosAdmin = renderTable;
+
+  // Botão atualizar
+  document.getElementById('btnRefreshComentarios')?.addEventListener('click', () => {
+    loadComentariosRemote().then(() => { updateBadgeComentarios(); renderTable(); });
+  });
 
   // Filtros
   document.getElementById('filterTabsComentarios')?.addEventListener('click', (e) => {
