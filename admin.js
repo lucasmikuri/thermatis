@@ -15,17 +15,50 @@ const DB = {
   set: (key, value) => localStorage.setItem('climamax_' + key, JSON.stringify(value)),
 };
 
+/* ─── Helpers de cookie (persistência de sessão across reloads) ─── */
+function _setCookie(name, val) {
+  document.cookie = `${name}=${encodeURIComponent(val)};path=/;SameSite=Strict`;
+}
+function _getCookie(name) {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function _delCookie(name) {
+  document.cookie = `${name}=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
 const AUTH = {
-  isLogged: () => sessionStorage.getItem('climamax_logged') === '1' && !!sessionStorage.getItem('thermatis_admin_token'),
+  isLogged: () => {
+    /* 1. Checa memória (in-session via persistence.js) */
+    if (sessionStorage.getItem('climamax_logged') === '1' && sessionStorage.getItem('thermatis_admin_token')) {
+      return true;
+    }
+    /* 2. Fallback: restaura de cookie caso a memória tenha sido zerada (reload) */
+    const cookieToken = _getCookie('thermatis_admin_token');
+    if (cookieToken) {
+      sessionStorage.setItem('thermatis_admin_token', cookieToken);
+      sessionStorage.setItem('climamax_logged', '1');
+      const cookieUser = _getCookie('thermatis_admin_user');
+      if (cookieUser) sessionStorage.setItem('thermatis_admin_user', cookieUser);
+      return true;
+    }
+    return false;
+  },
   login: (token, user = 'Administrador') => {
-    if (token) sessionStorage.setItem('thermatis_admin_token', token);
+    if (token) {
+      sessionStorage.setItem('thermatis_admin_token', token);
+      _setCookie('thermatis_admin_token', token);
+    }
     sessionStorage.setItem('climamax_logged', '1');
     sessionStorage.setItem('thermatis_admin_user', user);
+    _setCookie('thermatis_admin_user', user);
   },
   logout: () => {
     sessionStorage.removeItem('climamax_logged');
     sessionStorage.removeItem('thermatis_admin_token');
     sessionStorage.removeItem('thermatis_admin_user');
+    _delCookie('thermatis_admin_token');
+    _delCookie('thermatis_admin_user');
     location.reload();
   },
 };
@@ -173,7 +206,10 @@ function navigateTo(pageId) {
 
   // Fecha sidebar no mobile
   const sidebar = document.getElementById('sidebar');
-  if (window.innerWidth <= 768) sidebar.classList.remove('mobile-open');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.remove('mobile-open');
+    document.body.classList.remove('sidebar-open');
+  }
 
   // Atualiza seção específica
   if (pageId === 'dashboard') setupDashboard();
