@@ -566,20 +566,36 @@ function initTracking(content) {
   if (!content) return;
   const { metaPixelId, googleTagId } = content.marketing || {};
 
-  // 1. Meta Pixel
+  // 1. Meta Pixel (código base oficial da Meta — inserido no <head>)
   if (metaPixelId && metaPixelId.trim() !== '') {
-    (function(f,b,e,v,n,t,s) {
-      if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)
-    })(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    
-    fbq('init', metaPixelId.trim());
-    fbq('track', 'PageView');
-    console.log('📡 Meta Pixel ativo:', metaPixelId);
+    const pid = metaPixelId.trim();
+    if (!window._fbqLoaded) {
+      window._fbqLoaded = true;
+      /* Script principal — inserido no <head> conforme instruções da Meta */
+      const t = document.createElement('script');
+      t.async = true;
+      t.src = 'https://connect.facebook.net/en_US/fbevents.js';
+      document.head.appendChild(t);
+
+      window.fbq = window.fbq || function() {
+        (window.fbq.q = window.fbq.q || []).push(arguments);
+      };
+      window.fbq.loaded = true;
+      window.fbq.version = '2.0';
+      window.fbq.queue  = window.fbq.queue || [];
+      window._fbq = window.fbq;
+
+      fbq('init', pid);
+      fbq('track', 'PageView');
+
+      /* <noscript> — fallback para usuários sem JavaScript */
+      const ns = document.createElement('noscript');
+      ns.innerHTML = `<img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=${pid}&ev=PageView&noscript=1" />`;
+      document.head.appendChild(ns);
+
+      console.log('📡 Meta Pixel ativo:', pid);
+    }
   }
 
   // 2. Google Tag (Ads/Analytics)
