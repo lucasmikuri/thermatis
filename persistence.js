@@ -80,19 +80,18 @@
 
   async function initAdmin() {
     try {
-      const [storeRes, orcRes, cliRes, visRes, comRes] = await Promise.all([
+      const [storeRes, orcRes, cliRes, visRes] = await Promise.all([
         apiFetch('/api/store'),
         apiFetch('/api/orcamentos'),
         apiFetch('/api/clientes'),
         apiFetch('/api/visitas'),
-        apiFetch('/api/comentarios'),
       ]);
       if (storeRes?.data) seedMemory('thermatis_master_store', storeRes.data);
       if (Array.isArray(orcRes?.data)) seedMemory('climamax_orcamentos', orcRes.data);
       if (Array.isArray(cliRes?.data)) seedMemory('climamax_clientes', cliRes.data);
       if (Array.isArray(visRes?.data)) seedMemory('climamax_visitas', visRes.data);
-      if (Array.isArray(comRes?.data)) seedMemory('climamax_comentarios', comRes.data);
       state.remoteConfigured = true;
+      /* Comentários carregados sob demanda em setupComentarios() */
     } catch (error) {
       console.warn('Persistência remota indisponível no admin.', error.message);
       throw error;

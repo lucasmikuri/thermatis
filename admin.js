@@ -207,8 +207,9 @@ function navigateTo(pageId) {
   }
 
   // Atualiza seção específica
-  if (pageId === 'dashboard') setupDashboard();
-  if (pageId === 'agenda')    renderCalendar();
+  if (pageId === 'dashboard')   setupDashboard();
+  if (pageId === 'agenda')      renderCalendar();
+  if (pageId === 'comentarios') loadComentariosRemote().then(() => { updateBadgeComentarios(); window._renderComentariosAdmin?.(); });
   if (pageId === 'conteudo' && typeof loadConteudoForm === 'function') setTimeout(loadConteudoForm, 80);
 }
 
@@ -1217,12 +1218,29 @@ function updateBadgeComentarios() {
   }
 }
 
+async function loadComentariosRemote() {
+  try {
+    const res = await fetch('/api/comentarios', {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem('thermatis_admin_token') || ''}` },
+    });
+    const json = await res.json();
+    if (Array.isArray(json?.data)) {
+      DB.set('comentarios', json.data);
+    }
+  } catch {
+    /* sem conexão — usa cache local */
+  }
+}
+
 function setupComentarios() {
-  updateBadgeComentarios();
+  /* Carrega dados remotos ao inicializar (não bloqueia o restante do painel) */
+  loadComentariosRemote().then(() => {
+    updateBadgeComentarios();
+    window._renderComentariosAdmin?.();
+  });
 
   let activeFilter = 'todos';
   let searchTerm   = '';
-  let currentComId = null;
 
   const renderTable = () => {
     let data = DB.get('comentarios', [])
