@@ -429,7 +429,17 @@ function injectGlobalSettingsPage() {
         </div>
         <div class="card">
           <div class="config-section-title">📡 Rastreamento</div>
-          <div class="config-group"><label>Meta Pixel ID</label><input type="text" id="st-pixel" placeholder="Ex: 123456789012345" /></div>
+          <div class="config-group">
+            <label>Meta Pixel ID
+              <span style="font-size:.75rem;font-weight:400;color:var(--text-2);margin-left:6px">
+                — só o número (ex: 748836794249404)
+              </span>
+            </label>
+            <input type="text" id="st-pixel" placeholder="Ex: 748836794249404" inputmode="numeric" />
+            <div style="font-size:.75rem;color:var(--text-2);margin-top:6px;line-height:1.5">
+              Encontre em: <strong style="color:var(--text-1)">Meta Ads Manager → Conjuntos de Dados → ID do Pixel</strong>
+            </div>
+          </div>
           <div class="config-group"><label>Google Tag ID</label><input type="text" id="st-google" placeholder="Ex: G-XXXXXXXXXX" /></div>
         </div>
       </div>
