@@ -596,3 +596,16 @@ function initTracking(content) {
     console.log('📡 Google Tag ativa:', googleTagId);
   }
 }
+
+/* ─── Atualização em tempo real vinda do painel admin ──────────────── */
+window.addEventListener('storage', (e) => {
+  if (e.key === STORE_KEY) applySiteContent();
+});
+
+/* Canal de broadcast para abas na mesma origem (complementa o storage) */
+if (typeof BroadcastChannel !== 'undefined') {
+  const siteChannel = new BroadcastChannel('thermatis_site_update');
+  siteChannel.addEventListener('message', (e) => {
+    if (e.data === 'refresh') applySiteContent();
+  });
+}
