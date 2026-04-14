@@ -1,27 +1,31 @@
 'use strict';
 
 const { json, readBody } = require('./_lib/http');
-const { replaceRows, insertRow } = require('./_lib/supabase');
+const { insertRow } = require('./_lib/supabase');
 const { requireAuth } = require('./_lib/auth');
 
-/* listRows genérico ordena por 'data' que não existe em comentarios */
-async function listComentarios() {
+/* Query direta — listRows genérico ordena por 'data' que não existe aqui */
+async function sbComentarios(path, options = {}) {
   const { getRequiredEnv } = require('./_lib/config');
   const key = getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY');
   const url = getRequiredEnv('SUPABASE_URL').replace(/\/$/, '');
-  const res = await fetch(`${url}/rest/v1/comentarios?select=*&order=created_at.asc.nullslast`, {
+  const res = await fetch(`${url}/rest/v1/comentarios${path}`, {
+    ...options,
     headers: {
       apikey: key,
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {}),
     },
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Supabase ${res.status}: ${text}`);
   }
+  if (res.status === 204) return null;
   const text = await res.text();
-  return text ? JSON.parse(text) : [];
+  return text ? JSON.parse(text) : null;
 }
 
 async function getBody(req) {
@@ -37,72 +41,82 @@ async function getBody(req) {
   } catch { return {}; }
 }
 
-function toText(value) {
-  if (value === undefined || value === null) return '';
-  return String(value).trim();
+function toText(v) {
+  return v === undefined || v === null ? '' : String(v).trim();
 }
 
 const STATUS_ALLOWED = ['pendente', 'aprovado', 'rejeitado'];
 
-function buildComentario(input = {}) {
-  const status = STATUS_ALLOWED.includes(toText(input.status)) ? toText(input.status) : 'pendente';
-  return {
-    id: toText(input.id) || `com-${Date.now()}`,
-    nome: toText(input.nome),
-    email: toText(input.email),
-    mensagem: toText(input.mensagem),
-    status,
-    created_at: toText(input.created_at) || new Date().toISOString(),
-  };
-}
-
 module.exports = async (req, res) => {
   try {
+    /* ── GET ─────────────────────────────────────────────────────────── */
     if (req.method === 'GET') {
       const auth = requireAuth(req);
-      const rows = await listComentarios();
+      const rows = await sbComentarios('?select=*&order=created_at.asc.nullslast') || [];
 
       if (auth) {
-        // Admin: retorna todos os comentários
-        return json(res, 200, { ok: true, data: rows || [] });
-      } else {
-        // Público: apenas aprovados, mais recentes primeiro
-        const aprovados = (rows || [])
-          .filter(c => c.status === 'aprovado')
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        return json(res, 200, { ok: true, data: aprovados });
+        return json(res, 200, { ok: true, data: rows });
       }
+      const aprovados = rows
+        .filter(c => c.status === 'aprovado')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return json(res, 200, { ok: true, data: aprovados });
     }
 
+    /* ── POST (novo comentário — público) ───────────────────────────── */
     if (req.method === 'POST') {
       const body = await getBody(req);
-      const source = body?.data && typeof body.data === 'object' ? body.data : body;
+      const src = body?.data && typeof body.data === 'object' ? body.data : body;
 
-      const payload = buildComentario({ ...source, status: 'pendente' });
+      const nome     = toText(src.nome);
+      const email    = toText(src.email);
+      const mensagem = toText(src.mensagem);
 
-      if (!payload.nome) {
-        return json(res, 400, { error: 'Campo obrigatório ausente: nome.' });
-      }
-      if (!payload.mensagem) {
-        return json(res, 400, { error: 'Campo obrigatório ausente: mensagem.' });
-      }
+      if (!nome)     return json(res, 400, { error: 'Campo obrigatório: nome.' });
+      if (!mensagem) return json(res, 400, { error: 'Campo obrigatório: mensagem.' });
+
+      const payload = {
+        id: `com-${Date.now()}`,
+        nome, email, mensagem,
+        status: 'pendente',
+        created_at: new Date().toISOString(),
+      };
 
       const row = await insertRow('comentarios', payload);
       return json(res, 201, { ok: true, data: row });
     }
 
-    if (req.method === 'PUT') {
+    /* ── PATCH (aprovar / rejeitar — admin) ─────────────────────────── */
+    if (req.method === 'PATCH') {
+      const auth = requireAuth(req);
+      if (!auth) return json(res, 401, { error: 'Não autorizado.' });
+
+      const body   = await getBody(req);
+      const id     = toText(body?.id);
+      const status = toText(body?.status);
+
+      if (!id)                          return json(res, 400, { error: 'Campo obrigatório: id.' });
+      if (!STATUS_ALLOWED.includes(status)) return json(res, 400, { error: 'Status inválido.' });
+
+      const rows = await sbComentarios(`?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      return json(res, 200, { ok: true, data: rows?.[0] || null });
+    }
+
+    /* ── DELETE (excluir — admin) ────────────────────────────────────── */
+    if (req.method === 'DELETE') {
       const auth = requireAuth(req);
       if (!auth) return json(res, 401, { error: 'Não autorizado.' });
 
       const body = await getBody(req);
-      const items = Array.isArray(body?.items)
-        ? body.items.map(buildComentario)
-        : [];
+      const id   = toText(body?.id) || toText(req.query?.id);
 
-      /* replaceRows usa DELETE + INSERT sem ordenação — ok para PUT */
-      const data = await replaceRows('comentarios', items);
-      return json(res, 200, { ok: true, data });
+      if (!id) return json(res, 400, { error: 'Campo obrigatório: id.' });
+
+      await sbComentarios(`?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return json(res, 200, { ok: true });
     }
 
     return json(res, 405, { error: 'Método não permitido.' });

@@ -7,7 +7,7 @@
     climamax_orcamentos: { endpoint: '/api/orcamentos', type: 'collection' },
     climamax_clientes: { endpoint: '/api/clientes', type: 'collection' },
     climamax_visitas: { endpoint: '/api/visitas', type: 'collection' },
-    climamax_comentarios: { endpoint: '/api/comentarios', type: 'collection' },
+    /* comentarios NÃO entra aqui — writes são feitos via PATCH/DELETE direto */
   };
   const syncTimers = new Map();
 
