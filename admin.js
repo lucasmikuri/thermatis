@@ -1408,25 +1408,51 @@ function openComentarioModal(id) {
   openModal('modalComentario');
 }
 
-function changeComentarioStatus(id, novoStatus) {
-  const lista = DB.get('comentarios', []);
-  const idx = lista.findIndex(c => c.id === id);
-  if (idx === -1) return;
+function adminFetch(url, options = {}) {
+  const token = _ss.get('thermatis_admin_token') || sessionStorage.getItem('thermatis_admin_token') || '';
+  return fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers || {}) },
+  });
+}
 
-  lista[idx].status = novoStatus;
-  DB.set('comentarios', lista);
+function changeComentarioStatus(id, novoStatus) {
+  /* Atualiza Map local imediatamente para a UI responder */
+  const lista = DB.get('comentarios', []);
+  const idx   = lista.findIndex(c => c.id === id);
+  if (idx !== -1) {
+    lista[idx].status = novoStatus;
+    if (window.Persistence?.seedMemory) window.Persistence.seedMemory('climamax_comentarios', lista);
+  }
   updateBadgeComentarios();
   window._renderComentariosAdmin?.();
 
-  const label = novoStatus === 'aprovado' ? 'aprovado' : 'rejeitado';
-  showToast(`Comentário ${label} com sucesso!`, 'success');
+  /* Persiste no Supabase via PATCH individual — sem DELETE */
+  adminFetch('/api/comentarios', {
+    method: 'PATCH',
+    body: JSON.stringify({ id, status: novoStatus }),
+  }).then(r => {
+    if (!r.ok) throw new Error(r.status);
+    const label = novoStatus === 'aprovado' ? 'aprovado' : 'rejeitado';
+    showToast(`Comentário ${label} com sucesso!`, 'success');
+  }).catch(() => showToast('Erro ao salvar. Tente novamente.', 'error'));
 }
 
 function deleteComentario(id) {
   if (!confirm('Excluir este comentário permanentemente?')) return;
+
+  /* Atualiza Map local imediatamente */
   const lista = DB.get('comentarios', []).filter(c => c.id !== id);
-  DB.set('comentarios', lista);
+  if (window.Persistence?.seedMemory) window.Persistence.seedMemory('climamax_comentarios', lista);
   updateBadgeComentarios();
   window._renderComentariosAdmin?.();
-  showToast('Comentário excluído.', 'success');
+
+  /* Persiste no Supabase via DELETE individual */
+  adminFetch('/api/comentarios', {
+    method: 'DELETE',
+    body: JSON.stringify({ id }),
+  }).then(r => {
+    if (!r.ok) throw new Error(r.status);
+    showToast('Comentário excluído.', 'success');
+  }).catch(() => showToast('Erro ao excluir. Tente novamente.', 'error'));
 }
