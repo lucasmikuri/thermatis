@@ -1243,7 +1243,12 @@ async function loadComentariosRemote() {
     });
     const json = await res.json();
     if (Array.isArray(json?.data)) {
-      DB.set('comentarios', json.data);
+      /* seedMemory escreve direto no Map sem acionar queueSync/replaceRows */
+      if (window.Persistence?.seedMemory) {
+        window.Persistence.seedMemory('climamax_comentarios', json.data);
+      } else {
+        DB.set('comentarios', json.data);
+      }
     }
   } catch {
     /* sem conexão — usa cache local */
